@@ -601,7 +601,9 @@ var P={
   home:'<path d="M3 11 12 3l9 8v10H3z"/><path d="M9 21v-6h6v6"/>',
   vol:'<path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',
   screen:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
-  pulse:'<path d="M3 12h4l3-8 4 16 3-8h4"/>'
+  pulse:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>',
+  camera:'<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>'
 };
 function svg(k){return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+P[k]+'</svg>'}
 function ico(k){var s=D.createElement('span');s.className='ico';s.innerHTML=svg(k);return s}
@@ -660,14 +662,41 @@ if(cfg&&!cfg.querySelector('.lt-card')&&$('cn')&&$('rn')&&$('pf')&&$('o1')&&$('o
   var chip=D.createElement('span');chip.className='chip';chip.textContent='WebRTC · criptografado';
   c3.appendChild(chip);if(info)c3.appendChild(info);
 
-  /* qualquer outro controle que já estivesse nos Ajustes (ex.: foto de perfil) vai para o cartão do perfil */
-  Array.prototype.slice.call(cfg.children).forEach(function(n){if(n!==info&&!n.classList.contains('lt-card')&&n.nodeType===1)c1.insertBefore(n,c1.children[1]||null)});
+  /* Itens que o lt-extras.js coloca nos Ajustes: foto de perfil (vai para o topo do cartão Perfil)
+     e "microfone aberto" (vai para Conexão e áudio). Só são movidos, os eventos continuam valendo. */
+  var rest=Array.prototype.slice.call(cfg.children).filter(function(n){return n.nodeType===1&&!n.classList.contains('lt-card')});
+  var fLb=null,fBox=null,extra=[];
+  rest.forEach(function(n){
+    if(n.tagName==='LABEL'&&n.classList.contains('ck')){
+      var t0=n.lastChild;
+      if(t0&&t0.nodeType===3){var s0=D.createElement('span');s0.textContent=t0.textContent.replace(/^[^A-Za-zÀ-ÿ0-9]+/,'');n.replaceChild(s0,t0)}
+      n.insertBefore(ico('mic'),n.firstChild);c2.appendChild(n);
+    }else if(n.tagName==='LABEL'){fLb=n}
+    else if(n.tagName==='DIV'&&n.querySelector('button')){fBox=n}
+    else extra.push(n);
+  });
+  if(fLb||fBox){
+    var fw=D.createElement('div');fw.className='fld';
+    if(fLb){fLb.insertBefore(ico('camera'),fLb.firstChild);fw.appendChild(fLb)}
+    if(fBox){
+      fBox.querySelectorAll('button').forEach(function(b){
+        var tx=b.textContent.replace(/^[^A-Za-zÀ-ÿ0-9]+/,'').trim();
+        b.classList.add('bt');b.innerHTML=svg('camera');var sp=D.createElement('span');sp.textContent=tx;b.appendChild(sp);
+      });
+      fw.appendChild(fBox);
+    }
+    c1.insertBefore(fw,c1.children[1]||null);
+  }
+  extra.forEach(function(n){c1.appendChild(n)});
   cfg.appendChild(prof);cfg.appendChild(c1);cfg.appendChild(c2);if(c4)cfg.appendChild(c4);cfg.appendChild(c3);
 
   /* Cabeçalho do perfil: só dados reais (nome digitado, estado da rede). Não há foto no app: usa a inicial. */
   var sync=function(){
     var n=(($('cn').value)||localStorage.lt_name||'').trim();
-    $('ltAv').textContent=n.charAt(0)||'?';
+    var pic='';try{pic=(window.ltAvatar&&typeof ID!=='undefined')?window.ltAvatar(ID):''}catch(e){}
+    var av=$('ltAv');
+    if(pic){av.textContent='';av.style.background='url("'+pic+'") center/cover'}
+    else{av.style.background='';av.textContent=n.charAt(0)||'?'}
     $('ltPn').textContent=n||'Seu nome';
     var hd=$('hd')?$('hd').textContent:'';
     $('ltSt').textContent=hd||'Aguardando conexão';
@@ -809,6 +838,16 @@ if(dev)dev.querySelectorAll('p.sm:not([id])').forEach(function(p){
 
 /* 3) Lista de dispositivos: avatar + botões redondos (a lista é refeita pelo app a cada mudança) */
 var BI=[['✏','edit','edit','Editar apelido'],['🗑','trash','del','Apagar contato'],['🔔','bell','','Chamar este aparelho'],['🔊','vol','','Silenciar'],['🔇','mute','','Reativar som'],['✕','userx','del','Remover da rede']];
+function picFor(name){
+  /* foto real (do lt-extras.js) do aparelho dessa linha; vazio se não houver */
+  try{
+    if(!window.ltAvatar)return '';
+    if(/\(este aparelho\)/.test(name))return window.ltAvatar(ID)||'';
+    var n=name.replace(/^👑\s*/,''),ps=Object.values(peers);
+    for(var i=0;i<ps.length;i++){if(dn(ps[i])===n)return ps[i].pic||''}
+  }catch(e){}
+  return '';
+}
 function rows(){
   var dl=$('dl');if(!dl)return;
   dl.querySelectorAll('.it').forEach(function(r){
@@ -817,7 +856,9 @@ function rows(){
     var self=/\(este aparelho\)/.test(name);
     var w=D.createElement('div');w.className='avw';
     var a=D.createElement('span');a.className='av2'+(self?' self':'');
-    if(self)a.innerHTML=svg('dev');
+    var pic=picFor(name);
+    if(pic){a.style.background='url("'+pic+'") center/cover'}
+    else if(self)a.innerHTML=svg('dev');
     else a.textContent=(name.replace(/^[^A-Za-zÀ-ÿ0-9]+/,'').charAt(0)||'?').toUpperCase();
     w.appendChild(a);if(dot)w.appendChild(dot);
     r.insertBefore(w,r.firstChild);
@@ -864,6 +905,7 @@ function inpFix(){
 if(inp){
   new MutationObserver(inpFix).observe(inp,{childList:true});
   window.addEventListener('resize',inpFix);setInterval(inpFix,1500);inpFix();
+  D.querySelectorAll('nav button').forEach(function(b){b.addEventListener('click',function(){setTimeout(inpFix,0)})});
 }
 
 /* 5) Mapa: usa os elementos que o app já cria (mapa real 3D e radar). NÃO substitui drawMap. */
@@ -907,6 +949,54 @@ if(vm&&cv&&lo&&lh&&!vm.querySelector('.lt-share')){
     new MutationObserver(fixml).observe(ml,{childList:true});fixml();
   }
 }
+})();
+</script>
+
+<!-- ===================== LocalTalk · PARTE 3 · Conexão pela internet (Etapa 1) =====================
+     Acrescenta o modo "pela internet" SEM alterar o código existente: quando ligado, as novas conexões
+     WebRTC passam a usar servidores STUN públicos para achar o caminho entre redes diferentes.
+     Desligado (padrão), o app continua exatamente como era (só rede local). -->
+<script id="lt-net-js">
+(function(){
+'use strict';
+var D=document;
+function on(){try{return localStorage.lt_net==='1'}catch(e){return false}}
+function set(v){try{localStorage.lt_net=v?'1':'0'}catch(e){}}
+
+/* 1) Servidores de descoberta. window.ltTurn é reservado para a Etapa 2 (relé TURN). */
+var STUN=[{urls:['stun:stun.cloudflare.com:3478','stun:stun.l.google.com:19302']}];
+var Orig=window.RTCPeerConnection;
+if(Orig&&!Orig.__lt){
+  var LTPC=class extends Orig{
+    constructor(cfg){
+      cfg=Object.assign({},cfg||{});
+      if(on()&&(!cfg.iceServers||!cfg.iceServers.length))cfg.iceServers=STUN.concat(window.ltTurn||[]);
+      super(cfg);
+    }
+  };
+  LTPC.__lt=1;
+  window.RTCPeerConnection=LTPC;
+}
+
+/* 2) Interruptor nos Ajustes (cartão "Rede") */
+var cfg=D.getElementById('v-cfg');if(!cfg)return;
+var card=null;
+cfg.querySelectorAll('.lt-card').forEach(function(c){var h=c.querySelector('h3');if(h&&h.textContent==='Rede')card=c});
+if(!card||D.getElementById('lt_net'))return;
+
+var lb=D.createElement('label');lb.className='ck';
+var ic=D.createElement('span');ic.className='ico';
+ic.innerHTML='<svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg>';
+var inp=D.createElement('input');inp.type='checkbox';inp.id='lt_net';inp.checked=on();
+var sp=D.createElement('span');sp.textContent='Conexão pela internet (outras redes)';
+lb.appendChild(ic);lb.appendChild(sp);lb.appendChild(inp);
+
+var note=D.createElement('p');note.className='sm';
+note.textContent='Ligada: usa servidores públicos (Cloudflare e Google) só para descobrir o seu endereço na internet e conectar com aparelhos em outras redes. Mensagens, áudio e localização continuam indo direto entre os aparelhos. Vale para as próximas conexões; desligada, o app usa só a rede local.';
+
+card.insertBefore(lb,card.children[1]||null);
+card.insertBefore(note,lb.nextSibling);
+inp.addEventListener('change',function(){set(inp.checked)});
 })();
 </script>
 
