@@ -1,0 +1,266 @@
+name: Build APK Claro
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+      - name: Gerar index-claro.html (tema azul claro)
+        run: |
+          # Não altera o index.html original: gera uma cópia clara só dentro do build.
+          cat > gerar_claro.py <<'PYEOF'
+          import sys
+          src, css_path, out = sys.argv[1:4]
+          html = open(src, encoding='utf-8').read()
+          css = open(css_path, encoding='utf-8').read()
+
+          def troca(antigo, novo, minimo=1):
+              global html
+              if html.count(antigo) < minimo:
+                  print("::warning::tema claro: nao achei este trecho no index.html: " + antigo[:60])
+                  return
+              html = html.replace(antigo, novo)
+
+          # cor da barra do navegador
+          troca('<meta name="theme-color" content="#070b14">', '<meta name="theme-color" content="#eaf4ff">')
+          # tela inicial (fundo escuro escrito direto no HTML)
+          troca('radial-gradient(ellipse at 50% 28%,#0d2f73 0%,#070b14 62%)',
+                'radial-gradient(ellipse at 50% 28%,#ffffff 0%,#d5e7ff 70%)')
+          # cores desenhadas em canvas (radar e vista do mapa)
+          troca("g.strokeStyle='#1b2740'", "g.strokeStyle='#a9c6ee'")
+          troca("'#8a97b3'", "'#5b7192'", 3)
+          troca("'#e9efff'", "'#14315c'", 2)
+          troca("sky.addColorStop(0,'#0b1730')", "sky.addColorStop(0,'#cfe4ff')")
+          troca("sky.addColorStop(1,'#16223a')", "sky.addColorStop(1,'#eaf4ff')")
+          troca("g.strokeStyle='#2a3a5c'", "g.strokeStyle='#8fb3e6'")
+          troca("g.fillStyle='rgba(0,0,0,.35)'", "g.fillStyle='rgba(30,70,140,.22)'")
+          # nome dos marcadores no mapa real (mapa claro: texto escuro com contorno branco)
+          troca('color:#fff;text-shadow:0 0 3px #000,0 0 3px #000',
+                'color:#10294d;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff')
+
+          # CSS do tema claro vai por último, para valer sobre os blocos do tema escuro
+          bloco = '<style id="lt-claro">\n' + css + '\n</style>\n'
+          fim = html.rfind('</body>')
+          html = html + bloco if fim == -1 else html[:fim] + bloco + html[fim:]
+          open(out, 'w', encoding='utf-8').write(html)
+          print("index-claro.html gerado")
+          PYEOF
+          cat > tema-claro.css <<'CSSEOF'
+          /* ===== LocalTalk · tema AZUL CLARO · só cores, sem mudar layout nem lógica ===== */
+          :root{
+            color-scheme:light;
+            --bg:#eaf4ff;--p:#ffffff;--l:#dcebff;--t:#0f2a4d;--m:#5b7192;--a:#2f7df6;--r:#e5384b;--g:#16a05a;
+            --a-hi:#3a8bff;--a-lo:#1d63d6;--vio-hi:#8b5cf6;--vio-lo:#6232d6;--red-hi:#ff5a6c;--red-lo:#d11f35;
+            --line:rgba(40,100,200,.20);
+            --card:linear-gradient(180deg,#ffffff,#f1f7ff);
+            --sh:0 6px 18px rgba(40,90,170,.14),inset 0 1px 0 rgba(255,255,255,.9);
+            --glow:0 0 0 1px rgba(47,125,246,.45),0 6px 16px rgba(47,125,246,.30);
+          }
+          html,body{background:linear-gradient(180deg,#d5e7ff 0%,#eaf4ff 40%,#f6faff 100%) fixed;color:var(--t)}
+
+          /* botões */
+          button{background:linear-gradient(180deg,#ffffff,#e6f0ff);color:var(--t);border:1px solid var(--line);box-shadow:var(--sh)}
+          button:active{filter:brightness(.95)}
+          button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline-color:#2f7df6}
+          #rc,#ltRc,.m.me,.it button.rb.edit{color:#fff}
+          #ptt.tx{color:#fff}
+
+          /* campos */
+          input,textarea,select{background-color:#fff;color:var(--t)}
+          input:focus,textarea:focus,select:focus{border-color:var(--a-hi);box-shadow:0 0 0 3px rgba(47,125,246,.20)}
+          input::placeholder{color:#8aa0c0}
+          #q{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b7192' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E")}
+
+          /* cartões, ícones, perfil */
+          .ico{background:rgba(47,125,246,.12);color:#1d63d6}
+          .chip{color:#0b7a40;border-color:rgba(22,160,90,.55);background:rgba(22,160,90,.10)}
+          .av,.av2{color:#fff}
+          .av{box-shadow:0 0 0 3px rgba(255,255,255,.9),0 4px 14px rgba(47,125,246,.35)}
+          .av2{border:2px solid rgba(255,255,255,.9)}
+          .prof .dot.on{box-shadow:0 0 6px var(--g)}
+
+          /* interruptores */
+          .ck input[type=checkbox]{background:#c7d9f2}
+          .ck input[type=checkbox]::after{background:#fff;box-shadow:0 1px 3px rgba(20,50,110,.35)}
+
+          /* navegação e cabeçalho */
+          nav{background:rgba(255,255,255,.94)}
+          nav button.sel{color:#1d63d6;background:linear-gradient(180deg,rgba(47,125,246,.14),transparent)}
+          nav button.sel svg.i{color:#1d63d6;filter:none}
+          nav button.sel::before{box-shadow:0 0 8px rgba(47,125,246,.5)}
+          #hd{background:rgba(255,255,255,.7);color:var(--m)}
+
+          /* conversas */
+          #chs .em{color:#c4283a;border-color:rgba(229,56,75,.65)}
+          .m{background:#fff;border:1px solid var(--line);box-shadow:0 2px 8px rgba(40,90,170,.12)}
+          .m.me{background:linear-gradient(180deg,var(--a-hi),var(--a-lo));border-color:rgba(255,255,255,.35)}
+          .m.s{background:none;border:0;box-shadow:none;color:var(--m)}
+          #ptt{color:#1d63d6;background:radial-gradient(120% 140% at 50% 0%,#ffffff 0%,#d3e6ff 75%);border-color:var(--a-hi);box-shadow:0 0 0 8px rgba(47,125,246,.12),0 0 0 18px rgba(47,125,246,.06),0 12px 28px rgba(47,125,246,.30)}
+
+          /* janela (modal) */
+          #modal{background:rgba(15,40,85,.45)}
+          #modal>div{background:linear-gradient(180deg,#ffffff,#eef6ff);border:1px solid var(--line);box-shadow:0 20px 50px rgba(20,50,110,.30)}
+
+          /* dispositivos */
+          .it .avw i.d{border-color:#fff}
+          .it.self{border-color:rgba(22,160,90,.45)}
+          .it button.rb.del{color:#c4283a}
+
+          /* radar */
+          .lt-radar{background:#eaf4ff!important}
+          CSSEOF
+          python3 gerar_claro.py index.html tema-claro.css index-claro.html
+      - name: Montar projeto
+        run: |
+          mkdir -p proj/app/src/main/java/br/com/localtalk
+          mkdir -p proj/app/src/main/assets
+          cp AndroidManifest.xml proj/app/src/main/
+          # nome do app diferente, para você distinguir do escuro na tela do celular
+          sed -i 's/android:label="Talk Local"/android:label="Talk Local Claro"/' proj/app/src/main/AndroidManifest.xml
+          grep -q 'Talk Local Claro' proj/app/src/main/AndroidManifest.xml
+          cp MainActivity.java proj/app/src/main/java/br/com/localtalk/
+          # o app abre sempre "index.html" dentro do APK: aqui ele recebe a versão clara
+          cp index-claro.html proj/app/src/main/assets/index.html
+          [ -f lt-extras.js ] && cp lt-extras.js proj/app/src/main/assets/ || true
+          RES=proj/app/src/main/res
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p $RES/mipmap-$d
+            cp ic_launcher.png $RES/mipmap-$d/ic_launcher.png
+          done
+          mkdir -p $RES/mipmap-anydpi-v26 $RES/mipmap-anydpi-v33 $RES/drawable-nodpi $RES/values $RES/values-v23 $RES/values-v27 $RES/values-v31
+          cp ic_foreground.png $RES/drawable-nodpi/ic_foreground.png
+          # fundo em gradiente (se o arquivo existir); senão usa cor lisa
+          if [ -f ic_background.png ]; then
+            cp ic_background.png $RES/drawable-nodpi/ic_background.png
+            BG='@drawable/ic_background'
+          else
+            BG='@color/ic_bg'
+          fi
+          # ícone de notificação (se não existir, usa o foreground)
+          if [ -f ic_notificacao.png ]; then
+            cp ic_notificacao.png $RES/drawable-nodpi/ic_stat_localtalk.png
+          else
+            cp ic_foreground.png $RES/drawable-nodpi/ic_stat_localtalk.png
+          fi
+          cat > $RES/mipmap-anydpi-v26/ic_launcher.xml <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+            <background android:drawable="$BG"/>
+            <foreground android:drawable="@drawable/ic_foreground"/>
+          </adaptive-icon>
+          EOF
+          # ícone monocromático (Android 13+): só se o arquivo existir
+          if [ -f ic_monochrome.png ]; then
+            cp ic_monochrome.png $RES/drawable-nodpi/ic_monochrome.png
+            cat > $RES/mipmap-anydpi-v33/ic_launcher.xml <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+            <background android:drawable="$BG"/>
+            <foreground android:drawable="@drawable/ic_foreground"/>
+            <monochrome android:drawable="@drawable/ic_monochrome"/>
+          </adaptive-icon>
+          EOF
+          else
+            rmdir $RES/mipmap-anydpi-v33
+          fi
+          # ic_bg = fundo do ícone (igual ao original); lt_bg = fundo claro do app
+          cat > $RES/values/colors.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+            <color name="ic_bg">#050A17</color>
+            <color name="lt_bg">#EAF4FF</color>
+          </resources>
+          EOF
+          # tema claro do app: fundo azul claro (sem piscar escuro) e ícones das barras em cinza escuro
+          cat > $RES/values/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+            <style name="LTTheme" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+              <item name="android:windowBackground">@color/lt_bg</item>
+              <item name="android:statusBarColor">@color/lt_bg</item>
+              <item name="android:navigationBarColor">@color/lt_bg</item>
+            </style>
+          </resources>
+          EOF
+          cat > $RES/values-v23/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+            <style name="LTTheme" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+              <item name="android:windowBackground">@color/lt_bg</item>
+              <item name="android:statusBarColor">@color/lt_bg</item>
+              <item name="android:navigationBarColor">@color/lt_bg</item>
+              <item name="android:windowLightStatusBar">true</item>
+            </style>
+          </resources>
+          EOF
+          cat > $RES/values-v27/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+            <style name="LTTheme" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+              <item name="android:windowBackground">@color/lt_bg</item>
+              <item name="android:statusBarColor">@color/lt_bg</item>
+              <item name="android:navigationBarColor">@color/lt_bg</item>
+              <item name="android:windowLightStatusBar">true</item>
+              <item name="android:windowLightNavigationBar">true</item>
+            </style>
+          </resources>
+          EOF
+          cat > $RES/values-v31/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+            <style name="LTTheme" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+              <item name="android:windowBackground">@color/lt_bg</item>
+              <item name="android:statusBarColor">@color/lt_bg</item>
+              <item name="android:navigationBarColor">@color/lt_bg</item>
+              <item name="android:windowLightStatusBar">true</item>
+              <item name="android:windowLightNavigationBar">true</item>
+              <item name="android:windowSplashScreenBackground">@color/lt_bg</item>
+              <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_foreground</item>
+            </style>
+          </resources>
+          EOF
+          cat > proj/settings.gradle <<'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositories { google(); mavenCentral() } }
+          rootProject.name = "LocalTalkClaro"
+          include ':app'
+          EOF
+          cat > proj/build.gradle <<'EOF'
+          plugins { id 'com.android.application' version '8.5.2' apply false }
+          EOF
+          cat > proj/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2g
+          EOF
+          # applicationId diferente (.claro): os dois apps (escuro e claro) podem ficar instalados juntos
+          cat > proj/app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+            namespace 'br.com.localtalk'
+            compileSdk 34
+            defaultConfig {
+              applicationId 'br.com.localtalk.claro'
+              minSdk 21
+              targetSdk 34
+              versionCode 1
+              versionName '1.0-claro'
+            }
+            compileOptions {
+              sourceCompatibility JavaVersion.VERSION_17
+              targetCompatibility JavaVersion.VERSION_17
+            }
+          }
+          EOF
+      - name: Construir APK
+        working-directory: proj
+        run: gradle assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TalkLocal-Claro-apk
+          path: proj/app/build/outputs/apk/debug/app-debug.apk
