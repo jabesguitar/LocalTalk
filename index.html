@@ -55,7 +55,7 @@ select{font:inherit;color:inherit;background:var(--p);border:1px solid var(--l);
 const $=s=>document.querySelector(s),rnd=()=>Math.random().toString(36).slice(2,8);
 const E=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 const ID=localStorage.lt_id||(localStorage.lt_id=rnd());
-let NAME=localStorage.lt_name||'',mic=null,peers={},talk={},hist=[],cur='chat',txOn=0,pend,md='',wl,ac;
+let NAME=localStorage.lt_name||'',mic=null,peers={},talk={},hist=[],cur='chat',txOn=0,micOK=0,micLive=0,micP=null,pend,md='',wl,ac;
 let opt={beep:1,wake:0,bg:0};try{opt=Object.assign(opt,JSON.parse(localStorage.lt_opt))}catch(e){}
 try{hist=JSON.parse(localStorage.lt_h||'[]')}catch(e){}
 const seen=new Set(hist.map(x=>x.id));let fvOn=0;const uid=()=>rnd()+Date.now().toString(36)+rnd();
@@ -147,8 +147,22 @@ setInterval(()=>{if(wq){qset(wq,ID,ql);all({t:'q',ch:wq,lc:ql,on:1})}},20000);
 function audio(){Object.values(peers).forEach(p=>{if(!p.au)return;const c=talk[p.id];p.au.muted=!!p.mu||!!(c&&c!='Emergência'&&c!=chn)})}
 function drawCh(){const c=$('#chs');c.textContent='';CH.forEach(n=>{const b=E('button',(n==chn?'sel ':'')+(n=='Emergência'?'em':''),n+(unr[n]?' ('+unr[n]+')':''));b.onclick=()=>setCh(n);c.append(b)})}
 function setCh(n){if(txOn||n==chn)return;if(wq&&wq!=n)qleave();chn=n;localStorage.lt_ch=n;unr[n]=0;drawCh();render();ui()}
-function pttOn(){if(!mic||txOn)return;if(busy(chn)||!turn(chn)){if(wq!=chn){qleave();qjoin()}ui();return}qleave();txOn=1;txCh=chn;mic.getAudioTracks()[0].enabled=true;all({t:'tx',on:true,ch:txCh});ui()}
-function pttOff(){if(!txOn)return;txOn=0;mic.getAudioTracks()[0].enabled=false;all({t:'tx',on:false,ch:txCh});beep(520,.08);ui()}
+function pttOn(){if(!mic||txOn)return;if(!micLive){micAcquire(1).then(()=>{if(micLive)pttOn()});return}if(busy(chn)||!turn(chn)){if(wq!=chn){qleave();qjoin()}ui();return}qleave();txOn=1;txCh=chn;mic.getAudioTracks()[0].enabled=true;all({t:'tx',on:true,ch:txCh});ui()}
+function pttOff(){if(!txOn)return;txOn=0;mic.getAudioTracks()[0].enabled=false;all({t:'tx',on:false,ch:txCh});beep(520,.08);ui();if(document.hidden)setTimeout(micRelease,250)}
+/* Libera o microfone quando o app sai da tela (WhatsApp e outros apps voltam a gravar) e reabre ao voltar */
+function micRelease(){try{if(txOn)pttOff()}catch(e){}try{if(mr)mr.stop()}catch(e){}try{mic&&mic.getTracks().forEach(t=>t.stop())}catch(e){}micLive=0}
+function micAcquire(keep){
+ if(!micOK||micLive)return Promise.resolve();
+ if(micP)return micP;
+ micP=(async()=>{try{
+  const ns=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+  const t=ns.getAudioTracks()[0];t.enabled=false;
+  if(!keep&&document.hidden){ns.getTracks().forEach(x=>x.stop());return}
+  mic=ns;micLive=1;
+  Object.values(peers).forEach(p=>{try{p.pc.getSenders().forEach(s=>{if(s.track&&s.track.kind=='audio')s.replaceTrack(t).catch(()=>{})})}catch(e){}})
+ }catch(e){}micP=null})();
+ return micP}
+async function tapGo(){if(!micOK)return;if(txOn){pttOff();return}if(!micLive)await micAcquire(1);pttOn()}
 const pb=$('#ptt');pb.onpointerdown=e=>{pb.setPointerCapture(e.pointerId);pttOn()};pb.onpointerup=pb.onpointercancel=pttOff;pb.oncontextmenu=e=>e.preventDefault();
 document.onkeydown=e=>{if(e.code=='Space'&&!e.repeat&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)&&cur=='chat'){e.preventDefault();pttOn()}};
 document.onkeyup=e=>{if(e.code=='Space')pttOff()};
@@ -165,7 +179,7 @@ function wav(){const n=8000,b=new DataView(new ArrayBuffer(44+n)),s=(o,t)=>[...t
 const ka=new Audio();ka.loop=true;ka.src=wav();
 async function applyOpt(){localStorage.lt_opt=JSON.stringify(opt);try{if(opt.wake&&navigator.wakeLock&&!wl){wl=await navigator.wakeLock.request('screen');wl.onrelease=()=>wl=null}else if(!opt.wake&&wl)wl.release()}catch(e){}
  if(opt.bg&&!window.LTAndroid){ka.play().catch(()=>{});if('mediaSession'in navigator)navigator.mediaSession.metadata=new MediaMetadata({title:'LocalTalk',artist:'Rádio ativo na rede local'})}else ka.pause();try{window.LTAndroid&&LTAndroid.keepAlive(!!opt.bg)}catch(e){}}
-document.onvisibilitychange=()=>{if(!document.hidden)applyOpt()};
+document.onvisibilitychange=()=>{if(document.hidden)micRelease();else{micAcquire();applyOpt()}};
 [['o1','beep'],['o2','wake'],['o3','bg']].forEach(([id,k])=>{$('#'+id).checked=!!opt[k];$('#'+id).onchange=e=>{opt[k]=e.target.checked?1:0;pf='';localStorage.lt_pf='';$('#pf').value='';applyOpt()}});
 $('#cn').onchange=e=>{NAME=e.target.value.trim()||NAME;localStorage.lt_name=NAME;all({t:'name',name:NAME});ui()};
 function nick(id,name){if(!ct[id])touch(id,name);md='n';nt=id;$('#modal').hidden=false;$('#l1').textContent='Apelido para '+name+' (vazio volta ao nome original)';$('#c1').readOnly=false;$('#c1').value=ct[id].nick||'';$('#c1').inputMode='text';$('#l2').hidden=$('#c2').hidden=$('#cp1').hidden=$('#cp2').hidden=true;$('#act').textContent='Salvar';$('#act').hidden=false;$('#hint').textContent=''}
@@ -176,7 +190,7 @@ let pf=PF[localStorage.lt_pf]?localStorage.lt_pf:'';$('#pf').value=pf;
 function applyPf(k){const f=PF[k];pf=f?k:'';localStorage.lt_pf=pf;if(!f)return;opt.beep=f.beep;opt.wake=f.wake;opt.bg=f.bg;[['o1','beep'],['o2','wake'],['o3','bg']].forEach(([i,key])=>$('#'+i).checked=!!opt[key]);applyOpt();setCh(f.ch)}
 $('#pf').onchange=e=>applyPf(e.target.value);
  // Botão do fone: toca uma vez para falar, toca de novo para parar
-window.ltTap=src=>{sys('🎧 botão recebido ('+src+')');if(!mic)return;if(txOn)pttOff();else pttOn()};
+window.ltTap=src=>{sys('🎧 botão recebido ('+src+')');tapGo()};
  let allMute=0;
 const volKeys=()=>{try{window.LTAndroid&&LTAndroid.volKeys(!!opt.vol)}catch(e){}};
 window.ltKey=src=>{
@@ -190,7 +204,7 @@ $('#o4').checked=!!opt.vol;$('#o4').onchange=e=>{opt.vol=e.target.checked?1:0;lo
 $('#vd').value=opt.vd||'';$('#vd').onchange=e=>{opt.vd=e.target.value;localStorage.lt_opt=JSON.stringify(opt)};
 volKeys();
  // Botão do fone/volume (o Android chama isto): toca uma vez para falar, toca de novo para parar
-window.ltTap=src=>{if(!mic)return;if(txOn)pttOff();else pttOn()};
+window.ltTap=src=>{tapGo()};
 // ---- Mapa: posição dos aparelhos (sem internet; GPS só onde o aparelho tiver) ----
 let locOn=0,me=null,lw=null,lt=0;const R=6371000,rad=x=>x*Math.PI/180;
 function hav(a,b){const dl=rad(b.lat-a.lat),dg=rad(b.lon-a.lon),x=Math.sin(dl/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(x)))}
@@ -216,7 +230,7 @@ $('#q').oninput=render;$('#fv').onclick=()=>{fvOn=!fvOn;$('#fv').classList.toggl
 $('#nm').value=NAME;
 $('#go').onclick=async()=>{NAME=$('#nm').value.trim()||'Dispositivo '+ID.slice(0,3);localStorage.lt_name=NAME;$('#cn').value=NAME;
  if(!window.RTCPeerConnection||!window.CompressionStream){$('#err').textContent='Navegador sem suporte. Use Chrome, Edge ou Safari atualizados.';return}
- try{mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});mic.getAudioTracks()[0].enabled=false}catch(e){mic=null;window.micErr=(e&&e.name||'erro')+' '+(e&&e.message||'')}
+ try{mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});mic.getAudioTracks()[0].enabled=false;micOK=1;micLive=1}catch(e){mic=null;window.micErr=(e&&e.name||'erro')+' '+(e&&e.message||'')}
  $('#splash').hidden=true;$('#app').hidden=false;drawCh();render();if(!mic)sys('Microfone indisponível: chat e recebimento de voz ativos, mas falar está desativado. Abra por HTTPS e permita o microfone. ['+window.micErr+']')
  applyOpt();ui()};
  // ===== Enviar áudio e arquivos =====
@@ -277,7 +291,7 @@ ab.onclick=()=>fi.click();
 fi.onchange=()=>{const f=fi.files[0];fi.value='';if(f)sendAtt(f,f.name)};
 rb.onclick=async()=>{
  if(mr){mr.stop();return}
- if(!mic||!window.MediaRecorder){sys('Gravação indisponível neste aparelho');return}
+ if(!mic||!window.MediaRecorder){sys('Gravação indisponível neste aparelho');return}  if(!micLive){micAcquire().then(()=>sys('Microfone reativado: toque em 🎤 de novo'));return}
  try{
   rtr=mic.getAudioTracks()[0].clone();rtr.enabled=true;
   const mt=['audio/webm;codecs=opus','audio/webm','audio/mp4'].find(t=>MediaRecorder.isTypeSupported(t))||'';
