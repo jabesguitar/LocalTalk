@@ -64,7 +64,16 @@ let adm='',lc=0,ql=0,wn=0,wq='',txCh='Geral';const ban=new Set(),qs={},unr={},QT
 let ct={};try{ct=JSON.parse(localStorage.lt_ct||'{}')||{}}catch(e){}let room=localStorage.lt_room||'',nt='';
 const saveCt=()=>{try{localStorage.lt_ct=JSON.stringify(ct)}catch(e){}},dn=p=>(ct[p.id]&&ct[p.id].nick)||p.name;
 function touch(id,name){const c=ct[id]||(ct[id]={});if(name)c.name=name;c.seen=Date.now();const k=Object.keys(ct);if(k.length>50){k.sort((a,b)=>(ct[a].seen||0)-(ct[b].seen||0));delete ct[k[0]]}saveCt()}
-const gather=pc=>new Promise(r=>{if(pc.iceGatheringState=='complete')return r();const f=()=>{if(pc.iceGatheringState=='complete'){pc.removeEventListener('icegatheringstatechange',f);r()}};pc.addEventListener('icegatheringstatechange',f);setTimeout(r,3000)});
+const gather=pc=>new Promise(r=>{
+ if(pc.iceGatheringState=='complete')return r();
+ const f=()=>{if(pc.iceGatheringState=='complete'){clearInterval(iv);pc.removeEventListener('icegatheringstatechange',f);r()}};
+ pc.addEventListener('icegatheringstatechange',f);
+ const wantRelay=localStorage.lt_net==='1'&&(window.ltTurn||[]).length>0,t0=Date.now();
+ const iv=setInterval(()=>{
+  const s=(pc.localDescription&&pc.localDescription.sdp)||'';
+  if(Date.now()-t0>(wantRelay?12000:3000)||(wantRelay&&/typ relay/.test(s))){clearInterval(iv);r()}
+ },250);
+});
 const tx=(p,m)=>{if(p.dc&&p.dc.readyState=='open')p.dc.send(JSON.stringify(m))},all=m=>Object.values(peers).forEach(p=>tx(p,m));
 function beep(f=880,d=.1){if(!opt.beep)return;try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;g.gain.value=.15;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
 const enc=async d=>{const s=new Blob([JSON.stringify({type:d.type,sdp:d.sdp})]).stream().pipeThrough(new CompressionStream('deflate-raw'));const b=new Uint8Array(await new Response(s).arrayBuffer());let x='';b.forEach(c=>x+=String.fromCharCode(c));return 'LT1:'+btoa(x)};
