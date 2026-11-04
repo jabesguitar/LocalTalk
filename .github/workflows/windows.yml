@@ -10,6 +10,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Montar index.html a partir de src/
+        run: python montar_html.py src/index.html index.html
       - name: Copiar arquivos do app
         run: |
           Copy-Item index.html windows/index.html
