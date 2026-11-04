@@ -1,0 +1,93 @@
+/* ---------- Tokens ---------- */
+:root{
+  --bg:#050a17;--p:#0d1630;--l:#18244d;--t:#eaf0ff;--m:#93a1c6;--a:#2f6bff;--r:#ff4d5e;--g:#27d17a;
+  --a-hi:#4b86ff;--a-lo:#1b49d1;--vio-hi:#8b5cf6;--vio-lo:#6232d6;--red-hi:#ff5a6c;--red-lo:#c0182d;
+  --line:rgba(130,160,255,.18);
+  --card:linear-gradient(180deg,rgba(26,40,88,.78),rgba(13,22,50,.86));
+  --sh:0 10px 28px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.06);
+  --glow:0 0 0 1px rgba(75,134,255,.5),0 8px 24px rgba(47,107,255,.35);
+  --rad:18px;--rad-s:14px;--tap:48px;
+  --mic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='2' width='6' height='12' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v4'/%3E%3C/svg%3E");
+}
+html,body{background:radial-gradient(120% 55% at 50% -8%,#14307a 0%,#07102a 45%,#050a17 100%) fixed;color:var(--t)}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---------- Botões (base + variantes) ---------- */
+button{min-height:var(--tap);border-radius:var(--rad-s);background:linear-gradient(180deg,#1d2c5e,#142048);border:1px solid var(--line);box-shadow:var(--sh);font-weight:600;transition:transform .12s ease,filter .12s ease,box-shadow .2s ease;-webkit-tap-highlight-color:transparent}
+button:active{transform:scale(.97);filter:brightness(1.18)}
+button:disabled{opacity:.5}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #8fb0ff;outline-offset:2px}
+.pri{background:linear-gradient(180deg,var(--a-hi),var(--a-lo));border-color:rgba(255,255,255,.18);box-shadow:var(--glow);color:#fff}
+#rc{background:linear-gradient(180deg,var(--vio-hi),var(--vio-lo));box-shadow:0 8px 24px rgba(124,58,237,.35),inset 0 1px 0 rgba(255,255,255,.2)}
+.it button{min-width:44px;min-height:44px}
+
+/* ---------- Campos ---------- */
+input,textarea,select{background:rgba(8,14,34,.85);border:1px solid var(--line);border-radius:var(--rad-s);min-height:var(--tap);transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--a-hi);box-shadow:0 0 0 3px rgba(47,107,255,.22)}
+input::placeholder{color:#6f7fa8}
+textarea{min-height:90px}
+
+/* ---------- Cartões ---------- */
+.it,.lt-card{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);box-shadow:var(--sh)}
+.lt-card{padding:14px;display:flex;flex-direction:column;gap:12px}
+.lt-card>h3{font:700 12px/1 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--m)}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld label{display:flex;align-items:center;gap:8px;color:var(--t);font-size:13px;font-weight:600}
+.ico{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:10px;background:rgba(47,107,255,.16);color:#8fb0ff;flex:none}
+.ico svg.i{width:18px;height:18px}
+.chip{align-self:flex-start;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:var(--g);border:1px solid rgba(39,209,122,.5);background:rgba(39,209,122,.08)}
+
+/* ---------- Perfil ---------- */
+.prof{display:flex;align-items:center;gap:14px}
+.av{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font:700 26px system-ui,sans-serif;text-transform:uppercase;background:linear-gradient(135deg,#3b7bff,#7c3aed);box-shadow:0 0 0 3px rgba(255,255,255,.08),0 0 22px rgba(47,107,255,.45);flex:none}
+.prof b{display:block;font-size:20px;word-break:break-word}
+.prof small{display:flex;align-items:center;gap:6px;color:var(--m);margin-top:2px}
+.prof .dot{width:9px;height:9px;border-radius:50%;background:var(--m);flex:none}
+.prof .dot.on{background:var(--g);box-shadow:0 0 8px var(--g)}
+
+/* ---------- Interruptores (checkbox vira switch) ---------- */
+.ck{gap:12px;min-height:var(--tap);color:var(--t)}
+.ck .ico{order:1}
+.ck>span:not(.ico){order:2;flex:1}
+.ck input[type=checkbox]{order:3;margin-left:auto;-webkit-appearance:none;appearance:none;flex:none;position:relative;width:50px;height:30px;min-height:0;padding:0;border-radius:15px;background:#1a2552;border:1px solid var(--line);transition:background .2s}
+.ck input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#c9d4f5;transition:transform .2s,background .2s}
+.ck input[type=checkbox]:checked{background:linear-gradient(180deg,var(--a-hi),var(--a-lo))}
+.ck input[type=checkbox]:checked::after{transform:translateX(20px);background:#fff}
+
+/* ---------- Navegação (4 abas) ---------- */
+nav{background:rgba(9,16,38,.94);border-top:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+nav button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:62px;padding:8px 4px;font-size:11px;font-weight:600;background:none;border:0;box-shadow:none;border-radius:0;color:var(--m)}
+nav button.sel{color:#fff;background:linear-gradient(180deg,rgba(47,107,255,.2),transparent)}
+nav button.sel svg.i{color:#8fb0ff;filter:drop-shadow(0 0 6px rgba(75,134,255,.8))}
+nav button.sel::before{content:"";position:absolute;top:0;left:50%;width:32px;height:3px;margin-left:-16px;border-radius:0 0 4px 4px;background:var(--a-hi);box-shadow:0 0 12px var(--a-hi)}
+.pc nav button{flex-direction:row;justify-content:flex-start;gap:12px;font-size:14px;padding:14px 20px;min-height:52px}
+.pc nav button.sel::before{top:20%;bottom:20%;left:0;width:3px;height:auto;margin:0;border-radius:0 4px 4px 0}
+#hd{background:rgba(10,18,40,.6);border-bottom:1px solid var(--line)}
+
+/* ---------- Conversas: canais, balões, falar, SOS ---------- */
+#chs{padding:4px 2px 8px}
+#chs button{min-height:40px;border-radius:999px;padding:8px 14px}
+#chs .sel{background:linear-gradient(180deg,var(--a-hi),var(--a-lo));box-shadow:var(--glow);color:#fff}
+#chs .em{border-color:rgba(255,77,94,.7);color:#ff9aa5}
+#chs .em.sel{background:linear-gradient(180deg,var(--red-hi),var(--red-lo));color:#fff}
+.m{border-radius:18px;background:linear-gradient(180deg,#1b2a5c,#142048);border:1px solid var(--line);box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.m.me{background:linear-gradient(180deg,var(--a-hi),var(--a-lo));border-color:rgba(255,255,255,.18)}
+.m.s{background:none;border:0;box-shadow:none}
+#bar{align-items:stretch;gap:10px}
+#call,#snd,#fv{width:56px;padding:0;display:grid;place-items:center}
+#ptt{min-height:84px;display:flex;align-items:center;justify-content:center;gap:10px;line-height:1.2;text-align:center;font-size:17px;font-weight:700;border-radius:26px;border:1.5px solid var(--a-hi);background:radial-gradient(120% 140% at 50% 0%,#1e3a8a 0%,#0d1630 70%);box-shadow:0 0 0 6px rgba(47,107,255,.08),0 12px 32px rgba(47,107,255,.28)}
+#ptt::before{content:"";flex:none;width:30px;height:30px;background:currentColor;-webkit-mask:var(--mic) center/contain no-repeat;mask:var(--mic) center/contain no-repeat}
+#ptt.tx{background:linear-gradient(180deg,var(--red-hi),var(--red-lo));border-color:#ff8c98;animation:ltPulse 1.2s infinite}
+#ptt:disabled{opacity:.5;box-shadow:none;border-color:var(--line)}
+@keyframes ltPulse{0%{box-shadow:0 0 0 0 rgba(255,77,94,.55)}100%{box-shadow:0 0 0 16px rgba(255,77,94,0)}}
+/* SOS: identidade vermelha própria; o clique segurado de 1,2 s do app continua sendo a confirmação */
+#sos{position:relative;overflow:hidden;width:76px;padding:0;font-size:0;background:linear-gradient(180deg,var(--red-hi),var(--red-lo));border:1px solid rgba(255,255,255,.25);box-shadow:0 8px 22px rgba(255,77,94,.35),inset 0 1px 0 rgba(255,255,255,.25)}
+#sos::after{content:"SOS";position:relative;font-size:16px;font-weight:800;letter-spacing:.06em;color:#fff}
+#sos::before{content:"";position:absolute;inset:0;background:rgba(255,255,255,.38);transform:scaleX(0);transform-origin:left;transition:transform .15s}
+#sos:active::before{transform:scaleX(1);transition:transform 1.2s linear}
+
+/* ---------- Janela (modal) ---------- */
+#modal{background:rgba(2,6,18,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#modal>div{background:linear-gradient(180deg,#16224a,#0d1630);border:1px solid var(--line);box-shadow:var(--sh)}
+
+@media (prefers-reduced-motion:reduce){button,.ck input,.ck input::after{transition:none}#ptt.tx{animation:none}}

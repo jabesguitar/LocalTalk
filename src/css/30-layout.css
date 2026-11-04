@@ -1,0 +1,56 @@
+/* ---------- Cabeçalho de cada aba ---------- */
+.lt-head{display:flex;align-items:center;gap:12px;flex:none}
+.lt-head h2{flex:1;font:700 20px/1.2 system-ui,sans-serif}
+.lt-head .ico{width:40px;height:40px;border-radius:13px}
+.lt-head .ico svg.i{width:22px;height:22px}
+
+/* ---------- Botões com ícone + texto ---------- */
+.bt{display:flex;align-items:center;justify-content:center;gap:10px}
+#bi,#bj,#rc,#rj{width:100%;min-height:54px;font-size:15px}
+.lt-info{display:flex;align-items:flex-start;gap:10px;color:var(--m)}
+.lt-info .ico{width:26px;height:26px;border-radius:50%}
+.lt-info .ico svg.i{width:16px;height:16px}
+
+/* ---------- Dispositivos ---------- */
+#dl>small.sm{margin-top:8px;font-weight:700;letter-spacing:.04em;color:var(--m)}
+.it{min-height:68px}
+.it .avw{position:relative;flex:none;width:46px;height:46px}
+.av2{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:18px;background:linear-gradient(135deg,#3b7bff,#7c3aed);border:2px solid rgba(255,255,255,.12)}
+.av2.self{background:linear-gradient(135deg,#1fb86c,#0f7f4a)}
+.av2 svg.i{width:22px;height:22px}
+.it .avw i.d{position:absolute;right:-1px;bottom:-1px;width:14px;height:14px;border:2px solid #0d1630}
+.it.self{border-color:rgba(39,209,122,.4)}
+.it b{font-size:16px}
+.it button.rb{flex:none;width:44px;height:44px;padding:0;border-radius:50%;display:grid;place-items:center}
+.it button.rb svg.i{width:20px;height:20px}
+.it button.rb.edit{background:linear-gradient(180deg,var(--a-hi),var(--a-lo));border-color:rgba(255,255,255,.2)}
+.it button.rb.del{color:#ff9aa5}
+
+/* ---------- Conversas: busca e dock de falar ---------- */
+#q{padding-left:46px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238fa0c8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center;background-size:20px}
+.lt-dock{flex:none;display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:24px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh)}
+#bar{justify-content:center;align-items:center;gap:22px;padding:6px 0 0}
+#call,#sos{flex:none;width:64px;height:64px;min-height:64px;border-radius:50%}
+#call{order:1}#ptt{order:2}#sos{order:3}
+#ptt{flex:none;width:104px;height:104px;min-height:104px;padding:0;border-radius:50%;font-size:0;box-shadow:0 0 0 8px rgba(47,107,255,.14),0 0 0 18px rgba(47,107,255,.07),0 14px 36px rgba(47,107,255,.45)}
+#ptt{gap:0}
+#ptt::before{width:46px;height:46px;margin:0}
+/* barra de mensagem: botões iguais; com muitos botões (Android) o campo ganha uma linha só dele */
+#inp button{flex:0 0 48px;padding:0;height:48px;min-height:48px;display:grid;place-items:center}
+#inp #snd{flex:0 0 56px}
+#inp.lt-wrap{flex-wrap:wrap;gap:6px}
+#inp.lt-wrap #tx{flex:1 1 100%;order:-1}
+#inp.lt-wrap button{flex:1 1 0;min-width:40px}
+#inp.lt-wrap #snd{flex:0 0 52px}
+#ltPttLbl{text-align:center;font-size:13px;font-weight:600;color:var(--m);min-height:18px}
+#inp{align-items:center}
+
+/* ---------- Mapa ---------- */
+.lt-hrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.chip.off{color:var(--m);border-color:var(--line);background:none}
+.lt-mrow{display:flex;flex-wrap:wrap;gap:10px;flex:none}
+.lt-mrow button{flex:1 1 150px;min-height:52px;font-size:14px}
+.lt-radar.lt-none{display:none}
+.lt-mapbox{height:min(58vh,520px)!important;border-radius:22px!important;border:1px solid var(--line);box-shadow:var(--sh)}
+.lt-radar{width:100%!important;max-width:420px!important;border-radius:22px!important;border:1px solid var(--line)}
+#ml .it button,#spk .it button{width:44px;height:44px;padding:0;border-radius:50%;display:grid;place-items:center}
