@@ -12,6 +12,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.7
+      - name: Montar index.html a partir de src/
+        run: python3 montar_html.py src/index.html index.html
       - name: Montar projeto
         run: |
           mkdir -p proj/app/src/main/java/br/com/localtalk
