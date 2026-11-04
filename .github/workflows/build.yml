@@ -20,6 +20,8 @@ jobs:
           cp MainActivity.java proj/app/src/main/java/br/com/localtalk/
           cp index.html proj/app/src/main/assets/
           [ -f lt-extras.js ] && cp lt-extras.js proj/app/src/main/assets/ || true
+          # MapLibre dentro do app (sem CDN): o mapa deixa de baixar script de fora
+          bash baixar_maplibre.sh proj/app/src/main/assets
           RES=proj/app/src/main/res
           for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
             mkdir -p $RES/mipmap-$d
